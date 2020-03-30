@@ -48,7 +48,7 @@ float rightTriggerPressure = simExtXbox360Controller_getRightTriggerPressure() -
 #include <vector>
 
 #include "luaFunctionData.h"
-#include "v_repLib.h"
+#include "simLib.h"
 
 
 #ifdef _WIN32
@@ -67,7 +67,7 @@ float rightTriggerPressure = simExtXbox360Controller_getRightTriggerPressure() -
 #define CONCAT(x,y,z) x y z
 #define strConCat(x,y,z)	CONCAT(x,y,z)
 
-LIBRARY vrepLib;
+LIBRARY simLib;
 
 
 
@@ -846,7 +846,7 @@ void LUA_GET_RIGHT_TRIGGER_PRESSURE_CALLBACK(SLuaCallBack* p)
 // --------------------------------------------------------------------------------------
 
 // This is called just once, at the start of V-REP.
-VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer, int reservedInt)
+SIM_DLLEXPORT unsigned char simStart(void* reservedPointer, int reservedInt)
 {
 	// Dynamically load and bind V-REP functions:
 	char curDirAndFile[1024];
@@ -865,33 +865,33 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer, int reservedInt)
 	std::string temp(currentDirAndPath);
 
 #ifdef _WIN32
-	temp += "\\v_rep.dll";
+	temp +="\\coppeliaSim.dll";
 #elif defined (__linux)
-	temp += "/libv_rep.so";
+	temp+="/libcoppeliaSim.so";
 #elif defined (__APPLE__)
-	temp += "/libv_rep.dylib";
+	temp+="/libcoppeliaSim.dylib";
 #endif /* __linux || __APPLE__ */
 
-	vrepLib = loadVrepLibrary(temp.c_str());
-	if (vrepLib == NULL)
+	simLib = loadSimLibrary(temp.c_str());
+	if (simLib == NULL)
 	{
 		std::cout << "Error, could not find or correctly load v_rep.dll. Cannot start 'Xbox360Controller' plugin.\n";
 		return(0); // Means error, V-REP will unload this plugin
 	}
-	if (getVrepProcAddresses(vrepLib) == 0)
+	if (getSimProcAddresses(simLib) == 0)
 	{
 		std::cout << "Error, could not find all required functions in v_rep.dll. Cannot start 'Xbox360Controller' plugin.\n";
-		unloadVrepLibrary(vrepLib);
+		unloadSimLibrary(simLib);
 		return(0); // Means error, V-REP will unload this plugin
 	}
 
 	// Check the V-REP version:
-	int vrepVer;
-	simGetIntegerParameter(sim_intparam_program_version, &vrepVer);
-	if (vrepVer<30200) // if V-REP version is smaller than 3.02.00
+	int simVer;
+	simGetIntegerParameter(sim_intparam_program_version, &simVer);
+	if (simVer<30200) // if V-REP version is smaller than 3.02.00
 	{
 		std::cout << "Sorry, your V-REP copy is somewhat old, V-REP 3.2.0 or higher is required. Cannot start 'Xbox360Controller' plugin.\n";
-		unloadVrepLibrary(vrepLib);
+		unloadSimLibrary(simLib);
 		return 0; // Means error, V-REP will unload this plugin
 	}
 
@@ -1002,13 +1002,13 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer, int reservedInt)
 }
 
 // This is called just once, at the end of V-REP
-VREP_DLLEXPORT void v_repEnd()
+SIM_DLLEXPORT void simEnd()
 {
-	unloadVrepLibrary(vrepLib); // release the library
+	unloadSimLibrary(simLib); // release the library
 }
 
 // This is called quite often. Just watch out for messages/events you want to handle
-VREP_DLLEXPORT void* v_repMessage(int message, int* auxiliaryData, void* customData, int* replyData)
+SIM_DLLEXPORT void* simMessage(int message, int* auxiliaryData, void* customData, int* replyData)
 {
 	// This function should not generate any error messages:
 	int errorModeSaved;
